@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Legacy AR - WebAR Franela Marvel</title>
+    <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+        #recording-btn {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; padding: 15px 25px; border-radius: 50px;
+            background-color: #ff0000; color: white; font-family: Arial, sans-serif;
+            军事 font-weight: bold; border: none; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        #recording-btn.recording { background-color: #222; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        #recording-canvas { display: none; }
+    </style>
+</head>
+
+<body>
+    <button id="recording-btn">Iniciar Grabación</button>
+    <canvas id="recording-canvas"></canvas>
+
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
+             renderer="preserveDrawingBuffer: true; antialias: true; colorManagement: true" 
+             vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        
+        <a-assets>
+            <video id="vid" src="Video_WebAR.mp4" preload="auto" loop="true" 
+                   crossorigin="anonymous" playsinline webkit-playsinline></video>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity mindar-image-target="targetIndex: 0">
+            <!-- El alto es 1.339 para respetar la proporción 1792x2400 del dibujo -->
+            <a-entity geometry="primitive: plane; width: 1; height: 1.339"
+                      material="shader: video-alpha-sbs-shader; src: #vid; transparent: true">
+            </a-entity>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        // SHADER DEFINITIVO PARA VIDEO 1792x4800 (SBS Vertical)
+        AFRAME.registerShader('video-alpha-sbs-shader', {
+            schema: { src: {type: 'map', is: 'uniform'} },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                varying vec2 vUv;
+                uniform sampler2D src;
+                void main() {
+                    // Calculamos la mitad superior para el color (RGB)
+                    vec2 uvColor = vec2(vUv.x, vUv.y * 0.5 + 0.5); 
+                    // Calculamos la mitad inferior para el canal Alfa (Transparencia)
+                    vec2 uvAlpha = vec2(vUv.x, vUv.y * 0.5); 
+                    
+                    vec4 texColor = texture2D(src, uvColor);
+                    vec4 texAlpha = texture2D(src, uvAlpha);
+                    
+                    // Usamos el valor rojo de la máscara como transparencia
+                    gl_FragColor = vec4(texColor.rgb, texAlpha.r);
+                }
+            `
+        });
+
+        // LÓGICA DE GRABACIÓN Y AUDIO
+        const btn = document.getElementById('recording-btn');
+        const recordingCanvas = document.getElementById('recording-canvas');
+        const ctx = recordingCanvas.getContext('2d', {alpha: false});
+        const videoAnim = document.querySelector('#vid');
+        
+        let mediaRecorder, chunks = [], isRecording = false;
+        let audioCtx, mixer, videoSource, micSource;
+
+        const targetEl = document.querySelector('[mindar-image-target]');
+        targetEl.addEventListener("targetFound", () => videoAnim.play());
+        targetEl.addEventListener("targetLost", () => videoAnim.pause());
+
+        btn.addEventListener('click', async () => {
+            if (!isRecording) {
+                await initAudio();
+                startCapture();
+            } else {
+                stopCapture();
+            }
+        });
+
+        async function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                mixer = audioCtx.createMediaStreamDestination();
+                videoSource = audioCtx.createMediaElementSource(videoAnim);
+                videoSource.connect(mixer);
+                videoSource.connect(audioCtx.destination);
+                try {
+                    const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    micSource = audioCtx.createMediaStreamSource(micStream);
+                    micSource.connect(mixer);
+                } catch(e) { console.warn("Micrófono no detectado"); }
+            }
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+        }
+
+        function startCapture() {
+            const cameraVideo = document.querySelector('video:not([id])') || document.querySelector('video');
+            const aframeCanvas = document.querySelector('canvas.a-canvas');
+
+            recordingCanvas.width = cameraVideo.videoWidth || 1280;
+            recordingCanvas.height = cameraVideo.videoHeight || 720;
+
+            const videoStream = recordingCanvas.captureStream(30);
+            const combinedStream = new MediaStream([
+                ...videoStream.getVideoTracks(),
+                ...mixer.stream.getAudioTracks()
+            ]);
+
+            mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp9' });
+            mediaRecorder.ondataavailable = e => chunks.push(e.data);
+            mediaRecorder.onstop = saveVideo;
+
+            isRecording = true;
+            mediaRecorder.start();
+
+            function renderFrame() {
+                if (!isRecording) return;
+                ctx.drawImage(cameraVideo, 0, 0, recordingCanvas.width, recordingCanvas.height);
+                ctx.drawImage(aframeCanvas, 0, 0, recordingCanvas.width, recordingCanvas.height);
+                requestAnimationFrame(renderFrame);
+            }
+            renderFrame();
+            
+            btn.textContent = "Detener";
+            btn.classList.add('recording');
+        }
+
+        function stopCapture() {
+            isRecording = false;
+            mediaRecorder.stop();
+            btn.textContent = "Grabar de Nuevo";
+            btn.classList.remove('recording');
+        }
+
+        function saveVideo() {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `LegacyAR_Marvel_${Date.now()}.webm`;
+            link.click();
+            chunks = [];
+        }
+    </script>
+</body>
+</html>
