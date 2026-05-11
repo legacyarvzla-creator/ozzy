@@ -7,34 +7,43 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-        /* Botón de Grabación */
+        /* Botón de Grabación (Círculo Rojo) */
         #recording-btn {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; padding: 15px 25px; border-radius: 50px;
-            background-color: #ff0000; color: white; font-family: Arial, sans-serif;
-            font-weight: bold; border: none; cursor: pointer;
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; width: 70px; height: 70px; border-radius: 50%;
+            background-color: #ff0000; border: 4px solid white; cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
-        #recording-btn.recording { background-color: #222; animation: pulse 1s infinite; }
+        #recording-btn.recording { background-color: #222; animation: pulse 1s infinite; border-color: #ff0000; }
 
-        /* Botón de Flash */
+        /* Botón de Flash (Icono de Rayo) */
         #flash-btn {
-            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; padding: 12px 20px; border-radius: 50px;
-            background-color: #ffd700; color: black; font-family: Arial, sans-serif;
-            font-weight: bold; border: none; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
+            position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; width: 50px; height: 50px; border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.6); border: 2px solid white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.3s ease;
         }
+        #flash-btn svg { width: 25px; height: 25px; fill: white; }
+        
+        /* Estado activo del flash */
+        #flash-btn.active { background-color: #ffd700; border-color: #ffd700; box-shadow: 0 0 15px #ffd700; }
+        #flash-btn.active svg { fill: black; }
 
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        @keyframes pulse { 0%, 100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(0.9); } }
         #recording-canvas { display: none; }
     </style>
 </head>
 
 <body>
-    <button id="flash-btn">Encender Flash ⚡</button>
-    <button id="recording-btn">Iniciar Grabación</button>
+    <!-- Botón de Flash con Icono SVG de Rayo -->
+    <div id="flash-btn">
+        <svg viewBox="0 0 24 24">
+            <path d="M7,2V13H10V22L17,10H13L17,2H7Z" />
+        </svg>
+    </div>
+
+    <button id="recording-btn"></button>
     <canvas id="recording-canvas"></canvas>
 
     <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
@@ -56,15 +65,11 @@
     </a-scene>
 
     <script>
-        // SHADER DEFINITIVO PARA VIDEO 1792x4800 (SBS Vertical)
         AFRAME.registerShader('video-alpha-sbs-shader', {
             schema: { src: {type: 'map', is: 'uniform'} },
             vertexShader: `
                 varying vec2 vUv;
-                void main() {
-                    vUv = uv;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
+                void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
             `,
             fragmentShader: `
                 varying vec2 vUv;
@@ -87,27 +92,19 @@
         
         let mediaRecorder, chunks = [], isRecording = false;
         let audioCtx, mixer, videoSource, micSource;
-        let videoTrack = null;
 
-        // --- LÓGICA DEL FLASH ---
+        // Lógica del Flash con Icono
         flashBtn.addEventListener('click', async () => {
             try {
-                // MindAR crea un video para la cámara, lo buscamos:
                 const cameraVideo = document.querySelector('video:not([id])') || document.querySelector('video');
-                if (!cameraVideo || !cameraVideo.srcObject) {
-                    alert("Cámara no lista. Espera a que cargue la experiencia.");
-                    return;
-                }
-
                 const track = cameraVideo.srcObject.getVideoTracks()[0];
                 const capabilities = track.getCapabilities();
 
                 if (!capabilities.torch) {
-                    alert("Tu dispositivo no soporta el control del flash desde el navegador.");
+                    alert("Flash no disponible en este dispositivo.");
                     return;
                 }
 
-                // Obtener estado actual (si existe) o asumir apagado
                 const currentConstraints = track.getConstraints();
                 const isFlashOn = currentConstraints.advanced && currentConstraints.advanced[0].torch;
 
@@ -115,22 +112,18 @@
                     advanced: [{ torch: !isFlashOn }]
                 });
 
-                flashBtn.textContent = !isFlashOn ? "Apagar Flash 🌑" : "Encender Flash ⚡";
-                flashBtn.style.backgroundColor = !isFlashOn ? "#555" : "#ffd700";
-                flashBtn.style.color = !isFlashOn ? "white" : "black";
+                // Toggle de clase CSS para el diseño
+                flashBtn.classList.toggle('active', !isFlashOn);
 
             } catch (err) {
-                console.error("Error con el flash: ", err);
-                alert("Error al activar flash. Asegúrate de estar usando HTTPS.");
+                console.error(err);
             }
         });
 
-        // --- LÓGICA DE TARGETS ---
         const targetEl = document.querySelector('[mindar-image-target]');
         targetEl.addEventListener("targetFound", () => videoAnim.play());
         targetEl.addEventListener("targetLost", () => videoAnim.pause());
 
-        // --- LÓGICA DE GRABACIÓN ---
         btn.addEventListener('click', async () => {
             if (!isRecording) {
                 await initAudio();
@@ -151,7 +144,7 @@
                     const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     micSource = audioCtx.createMediaStreamSource(micStream);
                     micSource.connect(mixer);
-                } catch(e) { console.warn("Micrófono no detectado"); }
+                } catch(e) {}
             }
             if (audioCtx.state === 'suspended') await audioCtx.resume();
         }
@@ -159,23 +152,15 @@
         function startCapture() {
             const cameraVideo = document.querySelector('video:not([id])') || document.querySelector('video');
             const aframeCanvas = document.querySelector('canvas.a-canvas');
-
             recordingCanvas.width = cameraVideo.videoWidth || 1280;
             recordingCanvas.height = cameraVideo.videoHeight || 720;
-
             const videoStream = recordingCanvas.captureStream(30);
-            const combinedStream = new MediaStream([
-                ...videoStream.getVideoTracks(),
-                ...mixer.stream.getAudioTracks()
-            ]);
-
+            const combinedStream = new MediaStream([ ...videoStream.getVideoTracks(), ...mixer.stream.getAudioTracks() ]);
             mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp9' });
             mediaRecorder.ondataavailable = e => chunks.push(e.data);
             mediaRecorder.onstop = saveVideo;
-
             isRecording = true;
             mediaRecorder.start();
-
             function renderFrame() {
                 if (!isRecording) return;
                 ctx.drawImage(cameraVideo, 0, 0, recordingCanvas.width, recordingCanvas.height);
@@ -183,15 +168,12 @@
                 requestAnimationFrame(renderFrame);
             }
             renderFrame();
-            
-            btn.textContent = "Detener";
             btn.classList.add('recording');
         }
 
         function stopCapture() {
             isRecording = false;
             mediaRecorder.stop();
-            btn.textContent = "Grabar de Nuevo";
             btn.classList.remove('recording');
         }
 
@@ -200,7 +182,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `LegacyAR_Ozzy_${Date.now()}.webm`;
+            link.download = `LegacyAR_Capture_${Date.now()}.webm`;
             link.click();
             chunks = [];
         }
