@@ -7,20 +7,33 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
+        /* Botón de Grabación */
         #recording-btn {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             z-index: 1000; padding: 15px 25px; border-radius: 50px;
             background-color: #ff0000; color: white; font-family: Arial, sans-serif;
-            军事 font-weight: bold; border: none; cursor: pointer;
+            font-weight: bold; border: none; cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
         #recording-btn.recording { background-color: #222; animation: pulse 1s infinite; }
+
+        /* Botón de Flash */
+        #flash-btn {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; padding: 12px 20px; border-radius: 50px;
+            background-color: #ffd700; color: black; font-family: Arial, sans-serif;
+            font-weight: bold; border: none; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         #recording-canvas { display: none; }
     </style>
 </head>
 
 <body>
+    <button id="flash-btn">Encender Flash ⚡</button>
     <button id="recording-btn">Iniciar Grabación</button>
     <canvas id="recording-canvas"></canvas>
 
@@ -36,7 +49,6 @@
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
-            <!-- El alto es 1.339 para respetar la proporción 1792x2400 del dibujo -->
             <a-entity geometry="primitive: plane; width: 1; height: 1.339"
                       material="shader: video-alpha-sbs-shader; src: #vid; transparent: true">
             </a-entity>
@@ -58,33 +70,67 @@
                 varying vec2 vUv;
                 uniform sampler2D src;
                 void main() {
-                    // Calculamos la mitad superior para el color (RGB)
                     vec2 uvColor = vec2(vUv.x, vUv.y * 0.5 + 0.5); 
-                    // Calculamos la mitad inferior para el canal Alfa (Transparencia)
                     vec2 uvAlpha = vec2(vUv.x, vUv.y * 0.5); 
-                    
                     vec4 texColor = texture2D(src, uvColor);
                     vec4 texAlpha = texture2D(src, uvAlpha);
-                    
-                    // Usamos el valor rojo de la máscara como transparencia
                     gl_FragColor = vec4(texColor.rgb, texAlpha.r);
                 }
             `
         });
 
-        // LÓGICA DE GRABACIÓN Y AUDIO
         const btn = document.getElementById('recording-btn');
+        const flashBtn = document.getElementById('flash-btn');
         const recordingCanvas = document.getElementById('recording-canvas');
         const ctx = recordingCanvas.getContext('2d', {alpha: false});
         const videoAnim = document.querySelector('#vid');
         
         let mediaRecorder, chunks = [], isRecording = false;
         let audioCtx, mixer, videoSource, micSource;
+        let videoTrack = null;
 
+        // --- LÓGICA DEL FLASH ---
+        flashBtn.addEventListener('click', async () => {
+            try {
+                // MindAR crea un video para la cámara, lo buscamos:
+                const cameraVideo = document.querySelector('video:not([id])') || document.querySelector('video');
+                if (!cameraVideo || !cameraVideo.srcObject) {
+                    alert("Cámara no lista. Espera a que cargue la experiencia.");
+                    return;
+                }
+
+                const track = cameraVideo.srcObject.getVideoTracks()[0];
+                const capabilities = track.getCapabilities();
+
+                if (!capabilities.torch) {
+                    alert("Tu dispositivo no soporta el control del flash desde el navegador.");
+                    return;
+                }
+
+                // Obtener estado actual (si existe) o asumir apagado
+                const currentConstraints = track.getConstraints();
+                const isFlashOn = currentConstraints.advanced && currentConstraints.advanced[0].torch;
+
+                await track.applyConstraints({
+                    advanced: [{ torch: !isFlashOn }]
+                });
+
+                flashBtn.textContent = !isFlashOn ? "Apagar Flash 🌑" : "Encender Flash ⚡";
+                flashBtn.style.backgroundColor = !isFlashOn ? "#555" : "#ffd700";
+                flashBtn.style.color = !isFlashOn ? "white" : "black";
+
+            } catch (err) {
+                console.error("Error con el flash: ", err);
+                alert("Error al activar flash. Asegúrate de estar usando HTTPS.");
+            }
+        });
+
+        // --- LÓGICA DE TARGETS ---
         const targetEl = document.querySelector('[mindar-image-target]');
         targetEl.addEventListener("targetFound", () => videoAnim.play());
         targetEl.addEventListener("targetLost", () => videoAnim.pause());
 
+        // --- LÓGICA DE GRABACIÓN ---
         btn.addEventListener('click', async () => {
             if (!isRecording) {
                 await initAudio();
@@ -154,7 +200,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `LegacyAR_Marvel_${Date.now()}.webm`;
+            link.download = `LegacyAR_Ozzy_${Date.now()}.webm`;
             link.click();
             chunks = [];
         }
