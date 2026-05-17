@@ -7,12 +7,24 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
+        /* Pantalla de inicio para forzar la interacción del usuario y desbloquear el video */
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7); z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #start-btn {
+            padding: 20px 40px; border-radius: 50px; border: none;
+            background: #ff0000; color: white; font-size: 18px;
+            font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.5); cursor: pointer;
+        }
+
         /* Botón de Grabación (Círculo Rojo) */
         #recording-btn {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             z-index: 1000; width: 70px; height: 70px; border-radius: 50%;
             background-color: #ff0000; border: 4px solid white; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: none;
         }
         #recording-btn.recording { background-color: #222; animation: pulse 1s infinite; border-color: #ff0000; }
 
@@ -22,7 +34,7 @@
             z-index: 1000; width: 50px; height: 50px; border-radius: 50%;
             background-color: rgba(0, 0, 0, 0.6); border: 2px solid white;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.3s ease;
+            cursor: pointer; transition: all 0.3s ease; display: none;
         }
         #flash-btn svg { width: 25px; height: 25px; fill: white; }
         
@@ -36,6 +48,11 @@
 </head>
 
 <body>
+    <!-- Pantalla de inicio obligatoria para el navegador móvil -->
+    <div id="start-overlay">
+        <button id="start-btn">INICIAR EXPERIENCIA AR</button>
+    </div>
+
     <!-- Botón de Flash con Icono SVG de Rayo -->
     <div id="flash-btn">
         <svg viewBox="0 0 24 24">
@@ -46,7 +63,7 @@
     <button id="recording-btn"></button>
     <canvas id="recording-canvas"></canvas>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" 
              renderer="preserveDrawingBuffer: true; antialias: true; colorManagement: true" 
              vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
@@ -84,8 +101,8 @@
             `
         });
 
-        /* CÓDIGO DISFRAZADO REPARADO */
-        const _0x4d16=["getElementById","recording-btn","flash-btn","recording-canvas","2d","querySelector","#vid","recording","active","targetFound","play","targetLost","pause","addEventListener","click","video:not([id])","video","srcObject","getVideoTracks","getCapabilities","torch","Flash no disponible en este dispositivo.","getConstraints","advanced","applyConstraints","classList","toggle","suspended","resume","videoWidth","videoHeight","captureStream","stream","getAudioTracks","getVideoTracks","MediaRecorder","video/webm;codecs=vp9","ondataavailable","push","onstop","start","drawImage","canvas.a-canvas","requestAnimationFrame","stop","remove","Blob","video/webm","createObjectURL","createElement","download","LegacyAR_Capture_","click"];const btn=document[_0x4d16[0]](_0x4d16[1]);const flashBtn=document[_0x4d16[0]](_0x4d16[2]);const recordingCanvas=document[_0x4d16[0]](_0x4d16[3]);const ctx=recordingCanvas['getContext'](_0x4d16[4],{alpha:![]});const videoAnim=document[_0x4d16[5]](_0x4d16[6]);let mediaRecorder,chunks=[],isRecording=![];let audioCtx,mixer,videoSource,micSource;flashBtn[_0x4d16[13]](_0x4d16[14],async()=>{try{const _0x1c2b=document[_0x4d16[5]](_0x4d16[15])||document[_0x4d16[5]](_0x4d16[16]);const _0x2a3e=_0x1c2b[_0x4d16[17]][_0x4d16[18]]()[0];const _0x3f4a=_0x2a3e[_0x4d16[19]]();if(!_0x3f4a[_0x4d16[20]]){alert(_0x4d16[21]);return}const _0x5b2c=_0x2a3e[_0x4d16[22]]();const _0x1a2e=_0x5b2c[_0x4d16[23]]&&_0x5b2c[_0x4d16[23]][0][_0x4d16[20]];await _0x2a3e[_0x4d16[24]]({advanced:[{torch:!_0x1a2e}]});flashBtn[_0x4d16[25]][_0x4d16[26]](_0x4d16[27],!_0x1a2e)}catch(_0x512a){}});const targetEl=document[_0x4d16[5]]("[mindar-image-target]");targetEl[_0x4d16[13]](_0x4d16[9],()=>videoAnim[_0x4d16[10]]());targetEl[_0x4d16[13]](_0x4d16[11],()=>videoAnim[_0x4d16[12]]());btn[_0x4d16[13]](_0x4d16[14],async()=>{if(!isRecording){await initAudio();startCapture()}else{stopCapture()}});async function initAudio(){if(!audioCtx){audioCtx=new(window['AudioContext']||window['webkitAudioContext'])();mixer=audioCtx['createMediaStreamDestination']();videoSource=audioCtx['createMediaElementSource'](videoAnim);videoSource['connect'](mixer);videoSource['connect'](audioCtx['destination']);try{const _0xd12a=await navigator['mediaDevices']['getUserMedia']({audio:!![]});micSource=audioCtx['createMediaStreamSource'](_0xd12a);micSource['connect'](mixer)}catch(_0x2e1b){}}if(audioCtx['state']===_0x4d16[27])await audioCtx[_0x4d16[28]]()}function startCapture(){const _0x3b1c=document[_0x4d16[5]](_0x4d16[15])||document[_0x4d16[5]](_0x4d16[16]);const _0x4c2a=document[_0x4d16[5]](_0x4d16[42]);recordingCanvas['width']=_0x3b1c[_0x4d16[29]]||0x500;recordingCanvas['height']=_0x3b1c[_0x4d16[30]]||0x2d0;const _0x5a1e=recordingCanvas[_0x4d16[31]](0x1e);const _0x1f2c=new MediaStream([..._0x5a1e[_0x4d16[34]](),...mixer[_0x4d16[32]][_0x4d16[33]]()]);mediaRecorder=new MediaRecorder(_0x1f2c,{mimeType:_0x4d16[36]});mediaRecorder[_0x4d16[37]]=_0x112b=>chunks[_0x4d16[38]](_0x112b['data']);mediaRecorder[_0x4d16[39]]=saveVideo;isRecording=!![];mediaRecorder[_0x4d16[40]]();function _0x221a(){if(!isRecording)return;ctx[_0x4d16[41]](_0x3b1c,0x0,0x0,recordingCanvas['width'],recordingCanvas['height']);ctx[_0x4d16[41]](_0x4c2a,0x0,0x0,recordingCanvas['width'],recordingCanvas['height']);requestAnimationFrame(_0x221a)}_0x221a();btn[_0x4d16[25]]['add'](_0x4d16[7])}function stopCapture(){isRecording=![];mediaRecorder[_0x4d16[44]]();btn[_0x4d16[25]][_0x4d16[45]](_0x4d16[7])}function saveVideo(){const _0x142b=new Blob(chunks,{type:_0x4d16[47]});const _0x241a=URL[_0x4d16[48]](_0x142b);const _0x912a=document[_0x4d16[49]]("a");_0x912a['href']=_0x241a;_0x912a[_0x4d16[50]]=`LegacyAR_Capture_${Date['now']()}${'.webm'}`;_0x912a[_0x4d16[52]]();chunks=[]}
+        /* CÓDIGO DISFRAZADO CON DESBLOQUEO TÁCTIL MÓVIL */
+        const _0x1f23=["getElementById","start-btn","start-overlay","none","inline-block","recording-btn","flash-btn","vid","play","scene","querySelector","a-scene","addEventListener","click","video:not([id])","video","srcObject","getVideoTracks","getCapabilities","torch","Flash no disponible en este dispositivo.","getConstraints","advanced","applyConstraints","classList","toggle","active","targetFound","targetLost","pause","suspended","resume","recording-canvas","2d","videoWidth","videoHeight","captureStream","stream","getAudioTracks","MediaRecorder","video/webm;codecs=vp9","ondataavailable","push","onstop","start","drawImage","canvas.a-canvas","requestAnimationFrame","recording","stop","remove","Blob","video/webm","createObjectURL","createElement","download","LegacyAR_Capture_","style","display"];const startBtn=document[_0x1f23[0]](_0x1f23[1]);const startOverlay=document[_0x1f23[0]](_0x1f23[2]);const btn=document[_0x1f23[0]](_0x1f23[5]);const flashBtn=document[_0x1f23[0]](_0x1f23[6]);const videoAnim=document[_0x1f23[0]](_0x1f23[7]);const sceneEl=document[_0x1f23[10]](_0x1f23[11]);const recordingCanvas=document[_0x1f23[0]](_0x1f23[32]);const ctx=recordingCanvas['getContext'](_0x1f23[33],{alpha:![]});let mediaRecorder,chunks=[],isRecording=![];let audioCtx,mixer,videoSource,micSource;startBtn[_0x1f23[12]](_0x1f23[13],()=>{startOverlay[_0x1f23[57]][_0x1f23[58]]=_0x1f23[3];btn[_0x1f23[57]][_0x1f23[58]]=_0x1f23[4];flashBtn[_0x1f23[57]][_0x1f23[58]]=_0x1f23[4];videoAnim[_0x1f23[8]]();videoAnim['pause']();sceneEl['components'][_0x1f23[9]]['start']()});flashBtn[_0x1f23[12]](_0x1f23[13],async()=>{try{const _0x3a1b=document[_0x1f23[10]](_0x1f23[14])||document[_0x1f23[10]](_0x1f23[15]);const _0x4a2c=_0x3a1b[_0x1f23[16]][_0x1f23[17]]()[0];const _0x5b2d=_0x4a2c[_0x1f23[18]]();if(!_0x5b2d[_0x1f23[19]]){alert(_0x1f23[20]);return}const _0x1c2e=_0x4a2c[_0x1f23[21]]();const _0x2d3a=_0x1c2e[_0x1f23[22]]&&_0x1c2e[_0x1f23[22]][0][_0x1f23[19]];await _0x4a2c[_0x1f23[23]]({advanced:[{torch:!_0x2d3a}]});flashBtn[_0x1f23[24]][_0x1f23[25]](_0x1f23[26],!_0x2d3a)}catch(_0x5e2b){}});const targetEl=document[_0x1f23[10]]("[mindar-image-target]");targetEl[_0x1f23[12]](_0x1f23[27],()=>videoAnim[_0x1f23[8]]());targetEl[_0x1f23[12]](_0x1f23[28],()=>videoAnim[_0x1f23[29]]());btn[_0x1f23[12]](_0x1f23[13],async()=>{if(!isRecording){await initAudio();startCapture()}else{stopCapture()}});async function initAudio(){if(!audioCtx){audioCtx=new(window['AudioContext']||window['webkitAudioContext'])();mixer=audioCtx['createMediaStreamDestination']();videoSource=audioCtx['createMediaElementSource'](videoAnim);videoSource['connect'](mixer);videoSource['connect'](audioCtx['destination']);try{const _0x142b=await navigator['mediaDevices']['getUserMedia']({audio:!![]});micSource=audioCtx['createMediaStreamSource'](_0x142b);micSource['connect'](mixer)}catch(_0x241a){}}if(audioCtx['state']===_0x1f23[30])await audioCtx[_0x1f23[31]]()}function startCapture(){const _0x912a=document[_0x1f23[10]](_0x1f23[14])||document[_0x1f23[10]](_0x1f23[15]);const _0x3c2b=document[_0x1f23[10]](_0x1f23[46]);recordingCanvas['width']=_0x912a[_0x1f23[34]]||0x500;recordingCanvas['height']=_0x912a[_0x1f23[35]]||0x2d0;const _0x5a1e=recordingCanvas[_0x1f23[36]](0x1e);const _0x1f2c=new MediaStream([..._0x5a1e['getVideoTracks'](),...mixer['stream'][_0x1f23[38]]()]);mediaRecorder=new MediaRecorder(_0x1f2c,{mimeType:_0x1f23[40]});mediaRecorder[_0x1f23[41]]=_0x112b=>chunks[_0x1f23[42]](_0x112b['data']);mediaRecorder[_0x1f23[43]]=saveVideo;isRecording=!![];mediaRecorder[_0x1f23[44]]();function _0x221a(){if(!isRecording)return;ctx[_0x1f23[45]](_0x912a,0x0,0x0,recordingCanvas['width'],recordingCanvas['height']);ctx[_0x1f23[45]](_0x3c2b,0x0,0x0,recordingCanvas['width'],recordingCanvas['height']);requestAnimationFrame(_0x221a)}_0x221a();btn[_0x1f23[24]]['add'](_0x1f23[48])}function stopCapture(){isRecording=![];mediaRecorder[_0x1f23[49]]();btn[_0x1f23[24]][_0x1f23[50]](_0x1f23[48])}function saveVideo(){const _0x12bb=new Blob(chunks,{type:_0x1f23[52]});const _0x421a=URL[_0x1f23[53]](_0x12bb);const _0x512a=document[_0x1f23[54]]("a");_0x512a['href']=_0x421a;_0x512a[_0x1f23[55]]=`LegacyAR_Capture_${Date['now']()}${'.webm'}`;_0x512a[_0x1f23[13]]();chunks=[]}
     </script>
 </body>
 </html>
