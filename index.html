@@ -77,6 +77,7 @@
                 void main() {
                     vec2 uvColor = vec2(vUv.x, vUv.y * 0.5 + 0.5); 
                     vec2 uvAlpha = vec2(vUv.x, vUv.y * 0.5); 
+                    vec2 uvAlpha = vec2(vUv.x, vUv.y * 0.5); 
                     vec4 texColor = texture2D(src, uvColor);
                     vec4 texAlpha = texture2D(src, uvAlpha);
                     gl_FragColor = vec4(texColor.rgb, texAlpha.r);
@@ -84,108 +85,8 @@
             `
         });
 
-        const btn = document.getElementById('recording-btn');
-        const flashBtn = document.getElementById('flash-btn');
-        const recordingCanvas = document.getElementById('recording-canvas');
-        const ctx = recordingCanvas.getContext('2d', {alpha: false});
-        const videoAnim = document.querySelector('#vid');
-        
-        let mediaRecorder, chunks = [], isRecording = false;
-        let audioCtx, mixer, videoSource, micSource;
-
-        // Lógica del Flash con Icono
-        flashBtn.addEventListener('click', async () => {
-            try {
-                const cameraVideo = document.querySelector('video:not([id])') || document.querySelector('video');
-                const track = cameraVideo.srcObject.getVideoTracks()[0];
-                const capabilities = track.getCapabilities();
-
-                if (!capabilities.torch) {
-                    alert("Flash no disponible en este dispositivo.");
-                    return;
-                }
-
-                const currentConstraints = track.getConstraints();
-                const isFlashOn = currentConstraints.advanced && currentConstraints.advanced[0].torch;
-
-                await track.applyConstraints({
-                    advanced: [{ torch: !isFlashOn }]
-                });
-
-                // Toggle de clase CSS para el diseño
-                flashBtn.classList.toggle('active', !isFlashOn);
-
-            } catch (err) {
-                console.error(err);
-            }
-        });
-
-        const targetEl = document.querySelector('[mindar-image-target]');
-        targetEl.addEventListener("targetFound", () => videoAnim.play());
-        targetEl.addEventListener("targetLost", () => videoAnim.pause());
-
-        btn.addEventListener('click', async () => {
-            if (!isRecording) {
-                await initAudio();
-                startCapture();
-            } else {
-                stopCapture();
-            }
-        });
-
-        async function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                mixer = audioCtx.createMediaStreamDestination();
-                videoSource = audioCtx.createMediaElementSource(videoAnim);
-                videoSource.connect(mixer);
-                videoSource.connect(audioCtx.destination);
-                try {
-                    const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    micSource = audioCtx.createMediaStreamSource(micStream);
-                    micSource.connect(mixer);
-                } catch(e) {}
-            }
-            if (audioCtx.state === 'suspended') await audioCtx.resume();
-        }
-
-        function startCapture() {
-            const cameraVideo = document.querySelector('video:not([id])') || document.querySelector('video');
-            const aframeCanvas = document.querySelector('canvas.a-canvas');
-            recordingCanvas.width = cameraVideo.videoWidth || 1280;
-            recordingCanvas.height = cameraVideo.videoHeight || 720;
-            const videoStream = recordingCanvas.captureStream(30);
-            const combinedStream = new MediaStream([ ...videoStream.getVideoTracks(), ...mixer.stream.getAudioTracks() ]);
-            mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp9' });
-            mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            mediaRecorder.onstop = saveVideo;
-            isRecording = true;
-            mediaRecorder.start();
-            function renderFrame() {
-                if (!isRecording) return;
-                ctx.drawImage(cameraVideo, 0, 0, recordingCanvas.width, recordingCanvas.height);
-                ctx.drawImage(aframeCanvas, 0, 0, recordingCanvas.width, recordingCanvas.height);
-                requestAnimationFrame(renderFrame);
-            }
-            renderFrame();
-            btn.classList.add('recording');
-        }
-
-        function stopCapture() {
-            isRecording = false;
-            mediaRecorder.stop();
-            btn.classList.remove('recording');
-        }
-
-        function saveVideo() {
-            const blob = new Blob(chunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `LegacyAR_Capture_${Date.now()}.webm`;
-            link.click();
-            chunks = [];
-        }
+        /* SECCIÓN DEL CÓDIGO PROPIO TOTALMENTE DISFRAZADA */
+        const _0x4d16=["getElementById","recording-btn","flash-btn","recording-canvas","2d","querySelector","#vid","recording","active","targetFound","play","targetLost","pause","addEventListener","click","video:not([id])","video","srcObject","getVideoTracks","getCapabilities","torch","Flash no disponible en este dispositivo.","getConstraints","advanced","applyConstraints","classList","toggle","suspended","resume","videoWidth","videoHeight","captureStream","stream","getAudioTracks","getVideoTracks","MediaRecorder","video/webm;codecs=vp9","ondataavailable","push","onstop","start","drawImage","canvas.a-canvas","requestAnimationFrame","stop","remove","Blob","video/webm","createObjectURL","createElement","download","LegacyAR_Capture_","click"];const btn=document[_0x4d16[0]](_0x4d16[1]);const flashBtn=document[_0x4d16[0]](_0x4d16[2]);const recordingCanvas=document[_0x4d16[0]](_0x4d16[3]);const ctx=recordingCanvas['getContext'](_0x4d16[4],{alpha:![]});const videoAnim=document[_0x4d16[5]](_0x4d16[6]);let mediaRecorder,chunks=[],isRecording=![];let audioCtx,mixer,videoSource,micSource;flashBtn[_0x4d16[13]](_0x4d16[14],async()=>{try{const _0x1c2b=document[_0x4d16[5]](_0x4d16[15])||document[_0x4d16[5]](_0x4d16[16]);const _0x2a3e=_0x1c2b[_0x4d16[17]][_0x4d16[18]]()[0];const _0x3f4a=_0x2a3e[_0x4d16[19]]();if(!_0x3f4a[_0x4d16[20]]){alert(_0x4d16[21]);return}const _0x5b2c=_0x2a3e[_0x4d16[22]]();const _0x1a2e=_0x5b2c[_0x4d16[23]]&&_0x5b2c[_0x4d16[23]][0][_0x4d16[20]];await _0x2a3e[_0x4d16[24]]({advanced:[{torch:!_0x1a2e}]});flashBtn[_0x4d16[25]][_0x4d16[26]](_0x4d16[27],!_0x1a2e)}catch(_0x512a){}});const targetEl=document[_0x4d16[5]]("[mindar-image-target]");targetEl[_0x4d16[13]](_0x4d16[9],()=>videoAnim[_0x4d16[10]]());targetEl[_0x4d16[13]](_0x4d16[11],()=>videoAnim[_0x4d16[12]]());btn[_0x4d16[13]](_0x4d16[14],async()=>{if(!isRecording){await initAudio();startCapture()}else{stopCapture()}});async function initAudio(){if(!audioCtx){audioCtx=new(window['AudioContext']||window['webkitAudioContext'])();mixer=audioCtx['createMediaStreamDestination']();videoSource=audioCtx['createMediaElementSource'](videoAnim);videoSource['connect'](mixer);videoSource['connect'](audioCtx['destination']);try{const _0xd12a=await navigator['mediaDevices']['getUserMedia']({audio:!![]});micSource=audioCtx['createMediaStreamSource'](_0xd12a);micSource['connect'](mixer)}catch(_0x2e1b){}}if(audioCtx['state']===_0x4d16[27])await audioCtx[_0x4d16[28]]()}function startCapture(){const _0x3b1c=document[_0x4d16[5]](_0x4d16[15])||document[_0x4d16[5]](_0x4d16[16]);const _0x4c2a=document[_0x4d16[5]](_0x4d16[42]);recordingCanvas['width']=_0x3b1c[_0x4d16[29]]||0x500;recordingCanvas['height']=_0x3b1c[_0x4d16[30]]||0x2d0;const _0x5a1e=recordingCanvas[_0x4d16[31]](0x1e);const _0x1f2c=new MediaStream([..._0x5a1e[_0x4d16[34]](),...mixer[_0x4d16[32]][_0x4d16[33]]()]);mediaRecorder=new MediaRecorder(_0x1f2c,{mimeType:_0x4d16[36]});mediaRecorder[_0x4d16[37]]=_0x112b=>chunks[_0x4d16[38]](_0x112b['data']);mediaRecorder[_0x4d16[39]]=saveVideo;isRecording=!![];mediaRecorder[_0x4d16[40]]();function _0x221a(){if(!isRecording)return;ctx[_0x4d16[41]](_0x3b1c,0x0,0x0,recordingCanvas['width'],recordingCanvas['height']);ctx[_0x4d16[41]](_0x4c2a,0x0,0x0,recordingCanvas['width'],recordingCanvas['height']);requestAnimationFrame(_0x221a)}_0x221a();btn[_0x4d16[25]]['add'](_0x4d16[7])}function stopCapture(){isRecording=![];mediaRecorder[_0x4d16[44]]();btn[_0x4d16[25]][_0x4d16[45]](_0x4d16[7])}function saveVideo(){const _0x142b=new Blob(chunks,{type:_0x4d16[47]});const _0x241a=URL[_0x4d16[48]](_0x142b);const _0x912a=document[_0x4d16[49]]("a");_0x912a['href']=_0x241a;_0x912a[_0x4d16[50]]=`LegacyAR_Capture_${Date['now']()}${'.webm'}`;_0x912a[_0x4d16[52]]();chunks=[]}
     </script>
 </body>
 </html>
